@@ -1,12 +1,25 @@
 import os
+import google.generativeai as genai
 from dotenv import load_dotenv
-from langchain_google_genai import ChatGoogleGenerativeAI
 
 load_dotenv()
 
-def get_llm():
-    return ChatGoogleGenerativeAI(
-        model="gemini-1.5-pro",
-        google_api_key=os.getenv("GEMINI_API_KEY"),
-        temperature=0.2
+genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+
+def generate_text(prompt: str) -> str:
+    """
+    Direct Gemini call (same API as preprocessing).
+    Reliable and supports newest models.
+    """
+
+    model = genai.GenerativeModel("gemini-2.5-flash")
+
+    response = model.generate_content(
+        prompt,
+        generation_config={
+            "temperature": 0.2
+        }
     )
+
+    return response.text

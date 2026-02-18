@@ -1,4 +1,4 @@
-from core.llm import get_llm
+from core.llm import generate_text
 from utils.prompt_loader import load_prompt
 
 
@@ -68,7 +68,6 @@ def generate_legal_answer(query: str, evidence: dict) -> str:
     )
 
     # Call Gemini once
-    llm = get_llm()
-    response = llm.invoke(prompt)
+    response = generate_text(prompt)
+    return response.strip()
 
-    return response.content.strip()

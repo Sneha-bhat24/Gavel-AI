@@ -1,33 +1,25 @@
-from core.query_router import route_query
 from tools.case_law_tool import search_case_law
 from tools.constitution_tool import search_constitution
 
 
 def retrieve_legal_context(query: str):
     """
-    Main retrieval pipeline.
-    Decides which knowledge sources to use and gathers evidence.
+    Retrieval-first architecture.
+    Always gathers evidence from all legal sources.
+    No fragile intent detection.
     """
 
-    intent = route_query(query)
+    # Retrieve both sources every time
+    case_data = search_case_law(query, top_k=5)
+    constitution_data = search_constitution(query, top_k=5)
 
-    case_data = None
-    constitution_data = None
-
-    # ---------- routing ----------
-    if intent in ["case", "mixed"]:
-        case_data = search_case_law(query)
-
-    if intent in ["constitution", "mixed"]:
-        constitution_data = search_constitution(query)
-
-    # ---------- confidence ----------
+    # confidence calculation
     confidence_scores = []
 
-    if case_data:
+    if case_data and case_data["matches_found"] > 0:
         confidence_scores.append(case_data["confidence"])
 
-    if constitution_data:
+    if constitution_data and constitution_data["matches_found"] > 0:
         confidence_scores.append(constitution_data["confidence"])
 
     overall_confidence = (
@@ -35,12 +27,16 @@ def retrieve_legal_context(query: str):
         if confidence_scores else 0
     )
 
-    # ---------- structured evidence ----------
+    # unified evidence
     evidence = {
-        "intent": intent,
+        "intent": "auto",  # no manual intent
         "confidence": overall_confidence,
-        "cases": case_data["cases"] if case_data else [],
-        "constitution": constitution_data["articles"] if constitution_data else []
+        "cases": case_data.get("cases", []),
+        "constitution": constitution_data.get("articles", [])
     }
+
+    print("Retrieved cases:", len(evidence["cases"]),
+          "| articles:", len(evidence["constitution"]),
+          "| confidence:", overall_confidence)
 
     return evidence
